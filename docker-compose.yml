@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   parking-app:
-    container_name: parking-getaway
+    container_name: api-getaway
     build:
       context: .
       dockerfile: ./apps/parking-app/DockerFile
@@ -10,6 +10,8 @@ services:
     command: npm run start:dev parking-dev
     depends_on:
       - postgres
+      - rabbitmq
+      - users
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -17,7 +19,7 @@ services:
       - '3000:3000'
 
   users:
-    container_name: parking-users
+    container_name: microservice-users
     build:
       context: .
       dockerfile: ./apps/users/DockerFile
@@ -25,18 +27,32 @@ services:
     command: npm run start:dev users
     depends_on:
       - postgres
+      - rabbitmq
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
 
+  plate-recognition:
+    container_name: microservice-plate-recognition
+    build:
+      context: .
+      dockerfile: ./apps/plate-recognition/Dockerfile
+    command: python3 src/main.py
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app/apps/plate-recognition/
+
 
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq
     ports:
       - '5672:5672'
 
   postgres:
-    container_name: parking-db
+    container_name: database-postgres
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
